@@ -1,6 +1,7 @@
 class C {
 	a : Int <- 9;
 	b : Bool;
+    c : SELF_TYPE;
 	init(x : Int, y : Bool) : C {
            {
 		a <- x;
@@ -8,6 +9,10 @@ class C {
 		self;
            }
 	};
+
+    foo() : SELF_TYPE {
+        new SELF_TYPE
+    };
 };
 
 Class Main {

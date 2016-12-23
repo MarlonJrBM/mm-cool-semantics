@@ -81,7 +81,7 @@ public:
 
   /**
    * Given a symbol returns associated class.
-   * If symbol refers to a class which doesn't exist, throws SemantException
+   * If symbol refers to a class which doesn't exist, returns NULL
    */
   Class_ getClass(Symbol);
 

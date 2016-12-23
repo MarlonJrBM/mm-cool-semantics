@@ -9,6 +9,7 @@
 
 extern int semant_debug;
 extern char *curr_filename;
+const std::string desperateErrMsg("This is embarassing. Something went wrong and I don't know what it is. =/");
 
 //////////////////////////////////////////////////////////////////////
 //
@@ -390,13 +391,21 @@ Class_ ClassTable::getClass(Symbol s) {
     if (s == SELF_TYPE ) {
         actualSym = _curEnvironment->_class->getName();
     }
-    assert(actualSym);
+    //assert(actualSym);
 
     ClassMap::iterator it = _classMap.find(actualSym);
 
     if (it == _classMap.end()) {
-        semant_error(_curEnvironment->_class);
-        throw SemantException("Reference to a non-existent type: " + std::string(s->get_string()));
+        /*if (actualSym) { // corner case when a NULL symbom (no_type) gets passed
+            semant_error(_curEnvironment->_class);
+            throw SemantException("Reference to a non-existent type: " + std::string(s->get_string()));
+        } else {
+            //TODO - read commented line below - this will cause problems with err reporting
+            ///std::cout << "Something interesting is going on in class : " << _curEnvironment->_class->getName() << std::endl;
+            semant_error(_curEnvironment->_class);
+            throw SemantException("Compiler internal error");
+        }*/
+        return NULL;
     }
 
     return it->second;
@@ -405,6 +414,10 @@ Class_ ClassTable::getClass(Symbol s) {
 
 Symbol ClassTable::getAttrType(Symbol class_, Symbol attr) {
     Class_ c = this->getClass(class_);
+    if (c == NULL) {
+        semant_error(_curEnvironment->_class);
+        throw SemantException(desperateErrMsg);
+    }
     SymbolTbl& env = c->getEnvironment().objectTbl;
     Symbol* it = env.lookup(attr);
 
@@ -422,6 +435,10 @@ Symbol ClassTable::getAttrType(Symbol class_, Symbol attr) {
 
 Feature ClassTable::getMethod(Symbol class_, Symbol method ) {
     Class_ c = this->getClass(class_);
+    if (c == NULL) {
+        semant_error(_curEnvironment->_class);
+        throw SemantException(desperateErrMsg);
+    }
     MethodMap& env = c->getEnvironment().methodTbl;
 
     MethodMap::iterator it = env.find(method);
@@ -440,6 +457,10 @@ Feature ClassTable::getMethod(Symbol class_, Symbol method ) {
 bool ClassTable::is_descendant(Symbol s1, Symbol s2) {
     Class_ c1 = this->getClass(s1);
     Class_ c2 = this->getClass(s2);
+    if (c1 == NULL || c2 == NULL) {
+        semant_error(_curEnvironment->_class);
+        throw SemantException(desperateErrMsg);
+    }
     if ((c1 == c2)) { 
         return true;
     } else if (c1->getParent() == No_class) {
@@ -452,8 +473,12 @@ bool ClassTable::is_descendant(Symbol s1, Symbol s2) {
 
 Symbol ClassTable::least_ub(Symbol s1, Symbol s2) {
     Class_ c1 = this->getClass(s1);
-    s1 = c1->getName();
     Class_ c2 = this->getClass(s2);
+    if (c1 == NULL || c2 == NULL) {
+        semant_error(_curEnvironment->_class);
+        throw SemantException(desperateErrMsg);
+    }
+    s1 = c1->getName();
     s2 = c2->getName();
 
     if (is_descendant(s1,s2)) { 
@@ -472,7 +497,12 @@ bool ClassTable::comp_signature(Formals formals_, Expressions expressions_) {
     for (int ii = formals_->first(), jj = expressions_->first(); 
             formals_->more(ii),expressions_->more(jj); 
             ii = formals_->next(ii), jj = expressions_->next(jj) ) {
-       if (formals_->nth(ii)->getType() != expressions_->nth(jj)->get_type()) {
+       
+       Symbol actualType = (expressions_->nth(jj)->get_type() == SELF_TYPE) ? 
+                            _curEnvironment->_class->getName() : 
+                            expressions_->nth(jj)->get_type(); 
+                           
+       if (formals_->nth(ii)->getType() != actualType) {
             return false;
        }
     }
@@ -506,7 +536,10 @@ void ClassTable::analyze() {
             //cout << "Installed class " << classes_->nth(ii)->getName() << endl;
             _curEnvironment = &_classes->nth(ii)->getEnvironment();
             _curEnvironment->_class = _classes->nth(ii);
-            assert(_curEnvironment != NULL);
+            if (_curEnvironment == NULL) {
+                semant_error(_curEnvironment->_class);
+                throw SemantException("Compiler internal error");
+            }
             _classes->nth(ii)->analyze();
         }
 
@@ -786,7 +819,9 @@ void let_class::analyze() {
 
     body->analyze();
 
-    if (getClassTable().is_descendant(init->get_type(), type_decl)) {
+    //TODO - CORNER CASE : what if init is of no_type?
+    if ((init->get_type() == No_type) ||
+        (getClassTable().is_descendant(init->get_type(), type_decl))) {    
         type = body->get_type();
     } else {
         std::stringstream ss;
@@ -939,7 +974,7 @@ void string_const_class::analyze() {
 void new__class::analyze() {
     Symbol filename = getClassTable().getEnvironment()->_class->get_filename();
 
-    if (getClassTable().getClassMap().find(type_name) == getClassTable().getClassMap().end()) {
+    if (getClassTable().getClass(type_name) == NULL) {
        std::stringstream ss;
        ss << "Dynamic type " << type_name << " was not defined";
        getClassTable().semant_error(filename,this); 
