@@ -22,8 +22,11 @@ Class Main {
 	};
 };
 
+(* it's an error to inherit from Int, Str or Bool classes 
+class T inherits String {}; *)
 
-(* cyle in inheritance graph 
+
+(* cyle in inheritance graph  
 class A inherits E {};
 class B inherits A {};
 class Ca inherits B {};

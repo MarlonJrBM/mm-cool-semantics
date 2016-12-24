@@ -331,7 +331,11 @@ bool ClassTable::is_cycle(Class_ c, SymbolSet& stack_) {
     Class_ pc = NULL;
     //cout << s << " " << ps << endl;
 
-    //TODO - break if inherits from base classes
+
+    if (ps == Int || ps == Str || ps == Bool) {
+        this->semant_error(c);
+        throw SemantException("It is an error to inherit from Int, Str or Bool classes.");
+    }
     
     ClassMap::iterator it = _classMap.find(ps);
     if (ps != No_class) {
@@ -819,7 +823,6 @@ void let_class::analyze() {
 
     body->analyze();
 
-    //TODO - CORNER CASE : what if init is of no_type?
     if ((init->get_type() == No_type) ||
         (getClassTable().is_descendant(init->get_type(), type_decl))) {    
         type = body->get_type();

@@ -29,6 +29,8 @@ acordo com as regras da linguagem e anotação correta dos tipos para todas as e
 Vale lembrar que esta implementação procura reportar a maior quantidade de erros semânticos 
 possíveis por compilação - abortando a compilação se houver um erro semântico ou mais. Entretanto, não se pode garantir que todos os erros semânticos serão capturados de uma só vez.
 
+
+
 Notas sobre a implementação
 ---------------------------
 
@@ -55,7 +57,8 @@ recursiva da árvore). Tais métodos estão declarados em cool-tree.h e definido
 
     * PARA O LEITOR DO CÓDIGO: o ponto de entrada da análise semântica é o método semant() da classe 
 program_class. Recomendo começar por lá. A definição de tal método se encontra no arquivo semant.cc, 
-linha 1018.
+linha 1018. Repare que cada nó da árvore foi incrementado com o método "analyze()", o qual é 
+responsável por concretizar a descida recursiva da AST mencionada anteriormente.
 
 
 Testes
@@ -70,13 +73,18 @@ complexidade razoável e cobrem um vasto número de funcionalidades da linguagem
  
 ### Testes negativos (bad.cl)
  
-    Baseando na especificação do TP, procurei adotar uma estratégia de produção de erros, onde a     
-principal ferramenta era o símbolo de erro de Bison, colocado em algumas produções específicas.
+    Baseando no manual da linguagem Cool, procurei testar os erros mais comuns, de forma a listar o 
+maior número possível de erros por compilação. Alguns erros cobertos são: ciclo no grafo de herança, 
+ausência de função e classes main, discrepância na assinatura de métodos, usos inválidos de self e 
+SELF_TYPE, compatibilidade de tipos através de funções leq e least upper bound, entre outros.
  
+
 Limitações conhecidas
 ---------------------
  
      * Cobertura do código escrito pelos testes não é total;
      * Analisador não garante que todos os erros semânticos do arquivo serão listados em uma só 
 compilação.	
+    * Analisador semântico não garante que código está 100% correto do ponto de vista semântico 
+(alguns casos de canto foram deixados para trás).
 
